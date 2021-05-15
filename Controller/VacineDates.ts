@@ -7,10 +7,10 @@ export const db = new nedb({
   filename: "./db.json",
   // NEED TO WRITE ENCRYPTION MODELS HERE
   // afterSerialization: function (plaintext) {
-    
+
   // },
   // beforeDeserialization: function(ciphertext){
-    
+
   // }
 });
 
@@ -19,19 +19,20 @@ const getVacccineDates = (pin: string, date: Date) => {
   db.persistence.compactDatafile();
 
   const formatDate = dateformat(date, "dd-mm-yyyy");
-  const requestQuery = `pincode=${pin}&date=${formatDate}`;
+  const requestQuery = `district_id=${pin}&date=${formatDate}`;
 
   console.log(requestQuery);
-
+  let dat: any;
   axios
     .get(
-      `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?${requestQuery}`,
+      `https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?${requestQuery}`,
       {
         headers: requestHeaders,
       }
     )
     .then((response) => {
       //looping thru the data
+      dat = response.data;
       let finData: any = [];
       if (response.data.centers.length > 0) {
         response.data.centers.forEach((element: any) => {
@@ -45,6 +46,7 @@ const getVacccineDates = (pin: string, date: Date) => {
           finRow.fee_type = element.fee_type;
 
           const sessions = element.sessions;
+          // console.log(finRow);
 
           sessions.forEach((ses: any) => {
             let finRow2: any = {};
@@ -52,12 +54,13 @@ const getVacccineDates = (pin: string, date: Date) => {
             finRow2.available = ses.available_capacity;
             finRow2.min_age = ses.min_age_limit;
             finRow2.vaccine = ses.vaccine;
-
             finRow2.fees =
               element.fee_type == "Paid"
-                ? element.vaccine_fees.filter(
-                    (v: any) => v.vaccine == finRow2.vaccine
-                  )[0].fee
+                ? element.vaccine_fees == undefined
+                  ? "Unknown"
+                  : element.vaccine_fees.filter(
+                      (v: any) => v.vaccine == finRow2.vaccine
+                    )[0].fee
                 : 0;
 
             finData.push({ ...finRow, ...finRow2 });
@@ -72,7 +75,7 @@ const getVacccineDates = (pin: string, date: Date) => {
         obj["data"] = finData;
 
         db.update(
-          { pin: pin },
+          { district_id: pin },
           { $set: { data: finData } },
           { multi: true, upsert: true },
           (err: any, num: any, affectedDocs: any, upsert: boolean) => {
@@ -88,7 +91,7 @@ const getVacccineDates = (pin: string, date: Date) => {
         );
       }
     })
-    .catch((err) => console.log(err));
+    .catch((err) => console.log(dat, err));
 };
 
 export const caller = (pin: string) => {

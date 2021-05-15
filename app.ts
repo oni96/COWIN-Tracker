@@ -2,49 +2,50 @@ import { caller } from "./Controller/VacineDates";
 import fs from "fs";
 import path from "path";
 import cron from "cron";
+import dotenv from "dotenv";
 
 import { getAvailableSlots } from "./Controller/GetAvailableSlot";
 
-const main = (pins: any) => {
-  pins.pins.map((pin: any) => {
-    caller(pin);
+dotenv.config();
+
+const districts = require("./mappings/states-districts.json");
+
+const main = () => {
+  const my_state = districts.filter((d: any) => d.state == "West Bengal");
+
+  my_state[0].districts.map((d: any) => {
+    caller(d.district_id);
   });
 };
 
-const getUserPins = () => {
-  console.log("Wrtitng required pins");
-
-  delete require.cache[require.resolve("./users/user.json")];
+const notifyUsers = () => {
   const users = require("./users/user.json");
+  const myDistricts = districts.filter((d: any) => d.state == "West Bengal")[0]
+    .districts;
 
-  let pins: any = new Set();
+  // console.log(myDistricts);
 
   users.forEach((user: any) => {
-    user.pins.forEach((pin: any) => {
-      pins.add(pin);
-    });
+    const userSubs = [...user.districts];
+
+    const res = myDistricts.filter(
+      (d: any) => d.district_name == user.districts
+    );
+    console.log(res[0]);
+
+    getAvailableSlots(res[0].district_id, user.phone);
   });
-
-  console.log(Array.from(pins));
-
-  const obj = {
-    pins: Array.from(pins),
-  };
-
-  fs.writeFileSync(
-    path.join(__dirname, "pincodes", "pins.json"),
-    JSON.stringify(obj)
-  );
 };
 
-const cronJob = new cron.CronJob("* * * * *", () => {
-  delete require.cache[require.resolve("./pincodes/pins.json")];
-  const pins = require("./pincodes/pins.json");
-  main(pins);
+const mainJob = new cron.CronJob("*/16 * * * *", () => {
+  main();
 });
 
-const getUserPinsJob = new cron.CronJob("*/45 * * * * *", getUserPins);
+const notifyJob = new cron.CronJob("*/20 * * * *", () => {
+  notifyUsers();
+});
 
-getAvailableSlots("700019");
-// getUserPinsJob.start();
-// cronJob.start();
+mainJob.start();
+notifyJob.start();
+
+
