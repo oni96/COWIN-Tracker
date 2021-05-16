@@ -1,10 +1,13 @@
 import { caller } from "./Controller/VacineDates";
-import fs from "fs";
-import path from "path";
 import cron from "cron";
 import dotenv from "dotenv";
 
 import { getAvailableSlots } from "./Controller/GetAvailableSlot";
+import {
+  connect,
+  getAvailableSlotsFromDB,
+  getUsersFromDB,
+} from "./Controller/DBConnect";
 
 dotenv.config();
 
@@ -19,31 +22,38 @@ const main = () => {
 };
 
 const notifyUsers = () => {
-  const users = require("./users/user.json");
-  const myDistricts = districts.filter((d: any) => d.state == "West Bengal")[0]
-    .districts;
+  getUsersFromDB().then((users) => {
+    const myDistricts = districts.filter(
+      (d: any) => d.state == "West Bengal"
+    )[0].districts;
 
-  // console.log(myDistricts);
+    console.log(users);
 
-  users.forEach((user: any) => {
-    const userSubs = [...user.districts];
+    users.forEach((user: any) => {
+      const userSubs = user.districts;
 
-    const res = myDistricts.filter(
-      (d: any) => d.district_name == user.districts
-    );
-    console.log(res[0]);
+      const res = myDistricts.filter(
+        (d: any) => d.district_name == userSubs
+      );
+      console.log(res[0]);
 
-    getAvailableSlots(res[0].district_id, user.phone);
+      getAvailableSlots(res[0].district_id, user.phone);
+    });
   });
 };
 
-const mainJob = new cron.CronJob("0 8-23/1 * * *", () => {
+const mainJob = new cron.CronJob("25 8-23/1 * * *", () => {
   main();
 });
 
-const notifyJob = new cron.CronJob("15 8-23/1 * * *", () => {
+const notifyJob = new cron.CronJob("30 8-23/1 * * *", () => {
   notifyUsers();
 });
 
-mainJob.start();
-notifyJob.start();
+connect().then(() => {
+  // mainJob.start();
+  // notifyJob.start();
+  // main();
+  notifyUsers();
+  // notifyUsers();
+});

@@ -1,22 +1,10 @@
 import axios from "axios";
 import requestHeaders from "../headerconfigs/requestHeaders.json";
 import dateformat from "dateformat";
-import nedb from "nedb";
-
-export const db = new nedb({
-  filename: "./db.json",
-  // NEED TO WRITE ENCRYPTION MODELS HERE
-  // afterSerialization: function (plaintext) {
-
-  // },
-  // beforeDeserialization: function(ciphertext){
-
-  // }
-});
+import { addCowin } from "./DBConnect";
 
 const getVacccineDates = (pin: string, date: Date) => {
-  db.loadDatabase();
-  db.persistence.compactDatafile();
+
 
   const formatDate = dateformat(date, "dd-mm-yyyy");
   const requestQuery = `district_id=${pin}&date=${formatDate}`;
@@ -63,7 +51,8 @@ const getVacccineDates = (pin: string, date: Date) => {
                     )[0].fee
                 : 0;
 
-            finData.push({ ...finRow, ...finRow2 });
+            finData.push();
+            addCowin(pin, { ...finRow, ...finRow2 });
           });
         });
 
@@ -74,21 +63,8 @@ const getVacccineDates = (pin: string, date: Date) => {
         obj["pin"] = pin;
         obj["data"] = finData;
 
-        db.update(
-          { district_id: pin },
-          { $set: { data: finData } },
-          { multi: true, upsert: true },
-          (err: any, num: any, affectedDocs: any, upsert: boolean) => {
-            console.log(
-              num,
-              "Updated for ",
-              pin,
-              formatDate,
-              "upsert?",
-              upsert
-            );
-          }
-        );
+
+        
       }
     })
     .catch((err) => console.log(dat, err));
