@@ -67,7 +67,7 @@ const getVacccineDates = (pin: string, date: Date) => {
         
       }
     })
-    .catch((err) => console.log(dat, err));
+    .catch((err) => console.error("AXIOS Failed"));
 };
 
 export const caller = (pin: string) => {

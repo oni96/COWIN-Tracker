@@ -31,10 +31,12 @@ var notifyUsers = function () {
 var mainJob = new cron_1.default.CronJob("2 8-23/1 * * *", function () {
     main();
 });
-var notifyJob = new cron_1.default.CronJob("10 8-23/1 * * *", function () {
+var notifyJob = new cron_1.default.CronJob("15 8-23/1 * * *", function () {
     notifyUsers();
 });
 DBConnect_1.connect().then(function () {
+    main();
     mainJob.start();
     notifyJob.start();
 });
+// sendWAMessage("TEST TEST","9232475165")

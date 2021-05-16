@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAvailableSlots = void 0;
+exports.sendWAMessage = exports.getAvailableSlots = void 0;
 var DBConnect_1 = require("./DBConnect");
 var getAvailableSlots = function (pin, phone) {
     DBConnect_1.getAvailableSlotsFromDB(pin).then(function (res) {
@@ -32,3 +32,17 @@ var sendTextMessage = function (body, phone) {
         .then(function (message) { return console.log(message.sid); })
         .catch(function (err) { return console.log(err); });
 };
+var sendWAMessage = function (body, phone) {
+    var accountSid = process.env.TWILIO_ACCOUNT_SID;
+    var authToken = process.env.TWILIO_AUTH_TOKEN;
+    var client = require("twilio")(accountSid, authToken);
+    client.messages
+        .create({
+        body: body,
+        from: "whatsapp:+14155238886",
+        to: "whatsapp:+91" + phone,
+    })
+        .then(function (message) { return console.log(message.sid); })
+        .catch(function (err) { return console.log(err); });
+};
+exports.sendWAMessage = sendWAMessage;
