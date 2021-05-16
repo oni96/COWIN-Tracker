@@ -28,7 +28,7 @@ export async function addCowin(pin: string, finData: any) {
     { $set: { district_id: pin, ...finData } },
     { upsert: true }
   );
-  // console.log("Inserted");
+  console.log("Added",pin, finData.name);
 }
 
 export async function getAvailableSlotsFromDB(district_id: number) {

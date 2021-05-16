@@ -1,9 +1,4 @@
 "use strict";
-var __spreadArray = (this && this.__spreadArray) || function (to, from) {
-    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
-        to[j] = from[i];
-    return to;
-};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
@@ -12,6 +7,7 @@ var VacineDates_1 = require("./Controller/VacineDates");
 var cron_1 = __importDefault(require("cron"));
 var dotenv_1 = __importDefault(require("dotenv"));
 var GetAvailableSlot_1 = require("./Controller/GetAvailableSlot");
+var DBConnect_1 = require("./Controller/DBConnect");
 dotenv_1.default.config();
 var districts = require("./mappings/states-districts.json");
 var main = function () {
@@ -21,22 +17,24 @@ var main = function () {
     });
 };
 var notifyUsers = function () {
-    var users = require("./users/user.json");
-    var myDistricts = districts.filter(function (d) { return d.state == "West Bengal"; })[0]
-        .districts;
-    // console.log(myDistricts);
-    users.forEach(function (user) {
-        var userSubs = __spreadArray([], user.districts);
-        var res = myDistricts.filter(function (d) { return d.district_name == user.districts; });
-        console.log(res[0]);
-        GetAvailableSlot_1.getAvailableSlots(res[0].district_id, user.phone);
+    DBConnect_1.getUsersFromDB().then(function (users) {
+        var myDistricts = districts.filter(function (d) { return d.state == "West Bengal"; })[0].districts;
+        console.log(users);
+        users.forEach(function (user) {
+            var userSubs = user.districts;
+            var res = myDistricts.filter(function (d) { return d.district_name == userSubs; });
+            console.log(res[0]);
+            GetAvailableSlot_1.getAvailableSlots(res[0].district_id, user.phone);
+        });
     });
 };
-var mainJob = new cron_1.default.CronJob("0 8-23/1 * * *", function () {
+var mainJob = new cron_1.default.CronJob("2 8-23/1 * * *", function () {
     main();
 });
-var notifyJob = new cron_1.default.CronJob("15 8-23/1 * * *", function () {
+var notifyJob = new cron_1.default.CronJob("10 8-23/1 * * *", function () {
     notifyUsers();
 });
-mainJob.start();
-notifyJob.start();
+DBConnect_1.connect().then(function () {
+    mainJob.start();
+    notifyJob.start();
+});

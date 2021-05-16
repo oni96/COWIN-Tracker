@@ -14,22 +14,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.caller = exports.db = void 0;
+exports.caller = void 0;
 var axios_1 = __importDefault(require("axios"));
 var requestHeaders_json_1 = __importDefault(require("../headerconfigs/requestHeaders.json"));
 var dateformat_1 = __importDefault(require("dateformat"));
-var nedb_1 = __importDefault(require("nedb"));
-exports.db = new nedb_1.default({
-    filename: "./db.json",
-    // NEED TO WRITE ENCRYPTION MODELS HERE
-    // afterSerialization: function (plaintext) {
-    // },
-    // beforeDeserialization: function(ciphertext){
-    // }
-});
+var DBConnect_1 = require("./DBConnect");
 var getVacccineDates = function (pin, date) {
-    exports.db.loadDatabase();
-    exports.db.persistence.compactDatafile();
     var formatDate = dateformat_1.default(date, "dd-mm-yyyy");
     var requestQuery = "district_id=" + pin + "&date=" + formatDate;
     console.log(requestQuery);
@@ -65,7 +55,8 @@ var getVacccineDates = function (pin, date) {
                                 ? "Unknown"
                                 : element.vaccine_fees.filter(function (v) { return v.vaccine == finRow2.vaccine; })[0].fee
                             : 0;
-                    finData.push(__assign(__assign({}, finRow), finRow2));
+                    finData.push();
+                    DBConnect_1.addCowin(pin, __assign(__assign({}, finRow), finRow2));
                 });
             });
             //store somewhere for caching
@@ -74,9 +65,6 @@ var getVacccineDates = function (pin, date) {
             var obj = {};
             obj["pin"] = pin;
             obj["data"] = finData;
-            exports.db.update({ district_id: pin }, { $set: { data: finData } }, { multi: true, upsert: true }, function (err, num, affectedDocs, upsert) {
-                console.log(num, "Updated for ", pin, formatDate, "upsert?", upsert);
-            });
         }
     })
         .catch(function (err) { return console.log(dat, err); });

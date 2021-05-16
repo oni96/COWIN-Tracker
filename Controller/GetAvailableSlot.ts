@@ -8,7 +8,7 @@ export const getAvailableSlots = (pin: number, phone: string) => {
     res.forEach((leads) => {
       const body = createMessageBody(leads);
       console.log(body);
-      // sendTextMessage(body, phone);
+      sendTextMessage(body, phone);
     });
   });
 };
@@ -30,6 +30,25 @@ const sendTextMessage = (body: string, phone: string) => {
       body: body,
       from: "+16789168968",
       to: "+91" + phone,
+    })
+    .then((message: any) => console.log(message.sid))
+    .catch((err: any) => console.log(err));
+};
+
+
+export const sendWAMessage  = (body: string, phone: string) => {
+  const accountSid = process.env.TWILIO_ACCOUNT_SID;
+  const authToken = process.env.TWILIO_AUTH_TOKEN;
+
+  const client = require("twilio")(accountSid, authToken);
+
+  
+
+  client.messages
+    .create({
+      body: body,
+      from: "whatsapp:+14155238886",
+      to: "whatsapp:+91" + phone,
     })
     .then((message: any) => console.log(message.sid))
     .catch((err: any) => console.log(err));

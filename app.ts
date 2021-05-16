@@ -2,7 +2,7 @@ import { caller } from "./Controller/VacineDates";
 import cron from "cron";
 import dotenv from "dotenv";
 
-import { getAvailableSlots } from "./Controller/GetAvailableSlot";
+import { getAvailableSlots, sendWAMessage } from "./Controller/GetAvailableSlot";
 import {
   connect,
   getAvailableSlotsFromDB,
@@ -42,18 +42,20 @@ const notifyUsers = () => {
   });
 };
 
-const mainJob = new cron.CronJob("25 8-23/1 * * *", () => {
+const mainJob = new cron.CronJob("2 8-23/1 * * *", () => {
   main();
 });
 
-const notifyJob = new cron.CronJob("30 8-23/1 * * *", () => {
+const notifyJob = new cron.CronJob("15 8-23/1 * * *", () => {
   notifyUsers();
 });
 
 connect().then(() => {
-  // mainJob.start();
-  // notifyJob.start();
-  // main();
-  notifyUsers();
-  // notifyUsers();
+  main();
+  mainJob.start();
+  notifyJob.start();
 });
+
+
+
+// sendWAMessage("TEST TEST","9232475165")
