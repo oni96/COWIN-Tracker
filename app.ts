@@ -37,15 +37,13 @@ const notifyUsers = () => {
   });
 };
 
-const mainJob = new cron.CronJob("*/16 * * * *", () => {
+const mainJob = new cron.CronJob("0 8-23/1 * * *", () => {
   main();
 });
 
-const notifyJob = new cron.CronJob("*/20 * * * *", () => {
+const notifyJob = new cron.CronJob("15 8-23/1 * * *", () => {
   notifyUsers();
 });
 
 mainJob.start();
 notifyJob.start();
-
-

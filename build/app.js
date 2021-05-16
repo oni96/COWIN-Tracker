@@ -1,38 +1,42 @@
 "use strict";
+var __spreadArray = (this && this.__spreadArray) || function (to, from) {
+    for (var i = 0, il = from.length, j = to.length; i < il; i++, j++)
+        to[j] = from[i];
+    return to;
+};
 var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 var VacineDates_1 = require("./Controller/VacineDates");
-var fs_1 = __importDefault(require("fs"));
-var path_1 = __importDefault(require("path"));
 var cron_1 = __importDefault(require("cron"));
-var main = function (pins) {
-    pins.pins.map(function (pin) {
-        VacineDates_1.caller(pin);
+var dotenv_1 = __importDefault(require("dotenv"));
+var GetAvailableSlot_1 = require("./Controller/GetAvailableSlot");
+dotenv_1.default.config();
+var districts = require("./mappings/states-districts.json");
+var main = function () {
+    var my_state = districts.filter(function (d) { return d.state == "West Bengal"; });
+    my_state[0].districts.map(function (d) {
+        VacineDates_1.caller(d.district_id);
     });
 };
-var getUserPins = function () {
-    console.log("Wrtitng required pins");
-    delete require.cache[require.resolve("./users/user.json")];
+var notifyUsers = function () {
     var users = require("./users/user.json");
-    var pins = new Set();
+    var myDistricts = districts.filter(function (d) { return d.state == "West Bengal"; })[0]
+        .districts;
+    // console.log(myDistricts);
     users.forEach(function (user) {
-        user.pins.forEach(function (pin) {
-            pins.add(pin);
-        });
+        var userSubs = __spreadArray([], user.districts);
+        var res = myDistricts.filter(function (d) { return d.district_name == user.districts; });
+        console.log(res[0]);
+        GetAvailableSlot_1.getAvailableSlots(res[0].district_id, user.phone);
     });
-    console.log(Array.from(pins));
-    var obj = {
-        pins: Array.from(pins),
-    };
-    fs_1.default.writeFileSync(path_1.default.join(__dirname, "pincodes", "pins.json"), JSON.stringify(obj));
 };
-var cronJob = new cron_1.default.CronJob("* * * * *", function () {
-    delete require.cache[require.resolve('./pincodes/pins.json')];
-    var pins = require("./pincodes/pins.json");
-    main(pins);
+var mainJob = new cron_1.default.CronJob("0 8-23/1 * * *", function () {
+    main();
 });
-var getUserPinsJob = new cron_1.default.CronJob("*/5 * * * * *", getUserPins);
-getUserPinsJob.start();
-cronJob.start();
+var notifyJob = new cron_1.default.CronJob("15 8-23/1 * * *", function () {
+    notifyUsers();
+});
+mainJob.start();
+notifyJob.start();

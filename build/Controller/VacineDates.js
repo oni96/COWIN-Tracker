@@ -31,14 +31,16 @@ var getVacccineDates = function (pin, date) {
     exports.db.loadDatabase();
     exports.db.persistence.compactDatafile();
     var formatDate = dateformat_1.default(date, "dd-mm-yyyy");
-    var requestQuery = "pincode=" + pin + "&date=" + formatDate;
+    var requestQuery = "district_id=" + pin + "&date=" + formatDate;
     console.log(requestQuery);
+    var dat;
     axios_1.default
-        .get("https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?" + requestQuery, {
+        .get("https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByDistrict?" + requestQuery, {
         headers: requestHeaders_json_1.default,
     })
         .then(function (response) {
         //looping thru the data
+        dat = response.data;
         var finData = [];
         if (response.data.centers.length > 0) {
             response.data.centers.forEach(function (element) {
@@ -50,6 +52,7 @@ var getVacccineDates = function (pin, date) {
                 finRow.pincode = element.pincode;
                 finRow.fee_type = element.fee_type;
                 var sessions = element.sessions;
+                // console.log(finRow);
                 sessions.forEach(function (ses) {
                     var finRow2 = {};
                     finRow2.date = ses.date;
@@ -58,7 +61,9 @@ var getVacccineDates = function (pin, date) {
                     finRow2.vaccine = ses.vaccine;
                     finRow2.fees =
                         element.fee_type == "Paid"
-                            ? element.vaccine_fees.filter(function (v) { return v.vaccine == finRow2.vaccine; })[0].fee
+                            ? element.vaccine_fees == undefined
+                                ? "Unknown"
+                                : element.vaccine_fees.filter(function (v) { return v.vaccine == finRow2.vaccine; })[0].fee
                             : 0;
                     finData.push(__assign(__assign({}, finRow), finRow2));
                 });
@@ -69,12 +74,12 @@ var getVacccineDates = function (pin, date) {
             var obj = {};
             obj["pin"] = pin;
             obj["data"] = finData;
-            exports.db.update({ pin: pin }, { $set: { data: finData } }, { multi: true, upsert: true }, function (err, num, affectedDocs, upsert) {
+            exports.db.update({ district_id: pin }, { $set: { data: finData } }, { multi: true, upsert: true }, function (err, num, affectedDocs, upsert) {
                 console.log(num, "Updated for ", pin, formatDate, "upsert?", upsert);
             });
         }
     })
-        .catch(function (err) { return console.log(err); });
+        .catch(function (err) { return console.log(dat, err); });
 };
 var caller = function (pin) {
     var today = new Date();
